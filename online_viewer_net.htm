@@ -1,0 +1,1026 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPanel - VHS Monochrome Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- CORE VARIABLES (Monochrome) --- */
+        :root {
+            --bg-dark: #020202;
+            --text-main: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- FONTS --- */
+        .font-mono { font-family: 'Share Tech Mono', monospace; }
+        .font-cyber { font-family: 'Orbitron', sans-serif; }
+
+        /* --- UI UTILS --- */
+        .hidden { display: none !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #222; }
+        ::-webkit-scrollbar-thumb { background: #444; border: 1px solid #fff; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        /* --- VHS EFFECTS --- */
+        .vhs-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.02));
+            background-size: 100% 3px, 3px 100%;
+            z-index: 9999; pointer-events: none;
+            animation: flicker 0.1s infinite;
+        }
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9998; opacity: 0.07;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
+        .scanline {
+            width: 100%; height: 10px; z-index: 9999;
+            background: rgba(255, 255, 255, 0.05); opacity: 0.4;
+            position: absolute; bottom: 100%;
+            animation: scanline 8s linear infinite; pointer-events: none;
+        }
+        @keyframes flicker { 0% { opacity: 0.9; } 50% { opacity: 0.85; } 100% { opacity: 0.98; } }
+        @keyframes scanline { 0% { bottom: 100%; } 100% { bottom: -20%; } }
+        .retro-glow { text-shadow: 0 0 4px rgba(255, 255, 255, 0.6); }
+
+        /* --- COMPONENTS --- */
+        .cyber-card {
+            background: #000000; border: 1px solid #333;
+            box-shadow: 4px 4px 0px #222; transition: all 0.2s ease;
+            position: relative; overflow: hidden;
+        }
+        .cyber-card:hover { transform: translate(-1px, -1px); border-color: #fff; box-shadow: 6px 6px 0px #fff; }
+        
+        .cyber-btn {
+            background: #000; color: #fff; border: 1px solid #fff;
+            text-transform: uppercase; font-family: 'Share Tech Mono', monospace;
+            font-weight: bold; cursor: pointer; transition: all 0.2s;
+            box-shadow: 2px 2px 0px #666; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cyber-btn:hover { background: #fff; color: #000; box-shadow: 4px 4px 0px #999; }
+        .cyber-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #333; }
+        
+        .bg-retro-panel {
+            background-color: #080808;
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .animate-text-flicker { animation: textFlicker 3s infinite; }
+        @keyframes textFlicker { 0%, 100% { opacity: 1; } 96% { opacity: 0.4; } 98% { opacity: 0.2; } }
+
+        /* --- CINEMATIC CARD TRANSITION --- */
+        #card-transition-overlay {
+            background: #000;
+            perspective: 800px;
+            overflow: hidden;
+        }
+        .card-scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: zoom-in-scene 3s 1s forwards cubic-bezier(0.6, 0.04, 0.98, 0.335);
+        }
+        @keyframes zoom-in-scene {
+            0% { transform: scale(1); }
+            100% { transform: scale(30) translateZ(500px); opacity: 0; }
+        }
+        .transition-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10vw;
+            height: 15vw;
+            max-width: 120px;
+            max-height: 180px;
+            background: linear-gradient(45deg, #050505, #1a1a1a);
+            border: 1px solid #333;
+            opacity: 0;
+            transform-origin: center;
+            transform: translate(-50%, -50%);
+            animation: scatter-fly-out 2s forwards;
+            background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
+            background-size: 10px 10px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.05);
+        }
+        @keyframes scatter-fly-out {
+            0% {
+                transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.1);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: var(--final-transform); /* Use CSS variable set by JS */
+                opacity: 1;
+            }
+        }
+
+        /* --- DYNAMIC LOADERS --- */
+        .loader-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; overflow: hidden; }
+        
+        /* Loader: Void Gate */
+        .void-gate {
+            perspective: 1000px; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+        }
+        .void-tunnel {
+            position: absolute; width: 200%; height: 200%;
+            background: repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 100px),
+                        repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 100px);
+            transform-style: preserve-3d;
+            animation: moveTunnel 2s linear infinite;
+        }
+        @keyframes moveTunnel { from { transform: rotateX(70deg) translateY(0%); } to { transform: rotateX(70deg) translateY(15%); } }
+
+        /* Music Player Animation */
+        .visualizer-bar { animation: bounce 0.5s infinite ease-in-out alternate; background: #fff; width: 4px; }
+        @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
+        
+        @keyframes crtOpen { 0% { transform: scaleY(0.005) scaleX(0); opacity: 0; } 50% { transform: scaleY(0.005) scaleX(1); opacity: 1; } 100% { transform: scaleY(1) scaleX(1); opacity: 1; } }
+        .animate-crt-open { animation: crtOpen 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; transform-origin: center; }
+        
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.98);
+            backdrop-filter: blur(2px);
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VHS EFFECTS -->
+    <div id="vhs-effects">
+        <div class="vhs-overlay"></div>
+        <div class="scanline"></div>
+        <div class="noise"></div>
+    </div>
+
+    <!-- AUDIO ELEMENTS -->
+    <audio id="audio-player" crossorigin="anonymous" loop></audio>
+    <audio id="background-music" loop></audio>
+
+    <!-- CARD TRANSITION OVERLAY -->
+    <div id="card-transition-overlay" class="fixed inset-0 z-[10000] hidden pointer-events-none"></div>
+
+    <!-- LOADER OVERLAY -->
+    <div id="loader-overlay" class="loader-overlay hidden">
+        <div id="loader-content" class="w-full h-full relative"></div>
+    </div>
+
+    <!-- WELCOME SCREEN -->
+    <div id="welcome-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black text-white transition-opacity duration-1000">
+        <div class="relative z-10 text-center space-y-8 p-6 max-w-2xl w-full">
+            <div class="mb-4">
+                <h1 class="text-6xl md:text-8xl font-cyber font-black tracking-tighter retro-glow animate-text-flicker">SPANEL</h1>
+                <p class="text-xl font-mono tracking-[0.5em] text-gray-500 mt-2">MONO_CHROME // V.2.0</p>
+            </div> 
+
+            <div class="border-2 border-white p-8 bg-black relative overflow-hidden group hover:border-gray-400 transition-colors">
+                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+                <h2 class="text-xl font-mono mb-6 border-b border-gray-800 pb-2">SYSTEM ACCESS REQUEST</h2>
+                <p class="font-mono text-sm text-gray-400 mb-8 leading-relaxed">
+                    AUTHORIZED PERSONNEL ONLY.<br>
+                    <span class="text-white font-bold">ARCHITECT: MAZE</span><br>
+                    MAZE // BLACK_EDITION
+                </p>
+                <button onmouseover="app.scrambleText(this, '[ CROSSING THE LINE ]')" onclick="app.enterSystem()" class="w-full cyber-btn py-4 text-xl tracking-widest">
+                    [ CROSSING THE LINE ]
+                </button>
+            </div>
+            <div class="text-[10px] font-mono text-gray-700 uppercase tracking-widest mt-12">
+                Don't copy us. We see you watching.
+            </div>
+        </div>
+        <div class="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+             style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 30px 30px;">
+        </div>
+    </div>
+
+    <!-- UPDATE / INTRO MODAL -->
+    <div id="intro-modal" class="fixed inset-0 z-[60] bg-black hidden flex items-center justify-center p-4">
+        <div class="w-full max-w-lg border border-white bg-black p-6 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+            <div class="border-b border-dashed border-white pb-4 mb-4 flex justify-between items-end">
+                <h2 class="text-2xl font-cyber font-bold">SYSTEM PATCH_NOTE</h2>
+                <span class="text-xs font-mono bg-white text-black px-1">URGENT READ</span>
+            </div>
+            
+            <div class="space-y-6 font-mono text-sm text-gray-300">
+                <div class="border-l-2 border-white pl-4 py-2 bg-white/5">
+                    <p class="text-xs text-gray-500 mb-1">CREDITS_MANIFEST</p>
+                    <p class="text-white text-lg font-bold tracking-widest uppercase animate-pulse">ARCHITECT: MAZE</p>
+                    <p class="text-xs mt-1">CORE LOGIC & STRUCTURE DESIGNED BY MAZE.</p>
+                </div>
+
+                <div>
+                    <p class="text-white border-b border-gray-800 mb-2">CHANGELOG V2.1:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-gray-400">
+                        <li>Implemented Ghost Protocol packet shifting.</li>
+                        <li>Patched memory leak in Lua Obfuscator.</li>
+                        <li>New Feature: Music (Loop Mode).</li>
+                        <li>Upgrade: Neural Net & Void Gate Loading Sequences.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-gray-900 p-3 border border-gray-700 text-xs text-center">
+                    "This entire infrastructure was conceptualized and built by Maze. Unauthorized replication will result in immediate IP blacklisting."
+                </div>
+            </div>
+
+            <button onmouseover="app.scrambleText(this, 'INITIALIZE SYSTEM')" onclick="app.closeIntro()" class="w-full cyber-btn py-4 mt-8 text-sm tracking-[0.2em] animate-pulse">
+                INITIALIZE SYSTEM
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="relative min-h-screen flex flex-col hidden">
+        <canvas id="bgCanvas" class="fixed inset-0 w-full h-full -z-10 opacity-20"></canvas>
+
+        <!-- NAV -->
+        <nav class="border-b border-white/30 bg-black/95 p-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-4 z-20 backdrop-blur-md">
+            <div class="text-2xl font-cyber font-bold tracking-widest text-white flex items-center gap-2">
+                <i class="fas fa-ghost"></i> S<span class="text-gray-600">PANEL</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-4 font-mono text-xs md:text-sm">
+                <button onmouseover="app.scrambleText(this, '[ MODULES ]')" onclick="app.openNavModal('modules')" class="hover:text-white text-gray-400 hover:bg-white/10 px-2 py-1 transition-all">[ MODULES ]</button>
+                <button onmouseover="app.scrambleText(this, '[ MANUALS ]')" onclick="app.openNavModal('docs')" class="hover:text-white text-gray-400 hover:bg-white/10 px-2 py-1 transition-all">[ MANUALS ]</button>
+                <button onmouseover="app.scrambleText(this, '[ THREATS ]')" onclick="app.openNavModal('security')" class="hover:text-white text-gray-400 hover:bg-white/10 px-2 py-1 transition-all">[ THREATS ]</button>
+                <button onclick="app.toggleVhs()" class="cyber-btn border px-3 py-1 text-[10px] ml-2 tracking-widest">
+                    VHS: <span id="vhs-status">ON</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- HERO -->
+        <main class="flex-grow flex flex-col items-center justify-center p-6 text-center z-10 mt-8 md:mt-0">
+            <div class="mb-8 flex items-center gap-2 border border-gray-800 px-4 py-1 bg-black animate-pulse">
+                <span class="w-1.5 h-1.5 bg-white animate-pulse"></span>
+                <span class="font-mono text-[10px] text-gray-400 tracking-[0.2em] uppercase">Status: Undetected</span>
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-cyber font-black mb-6 text-white tracking-tighter">
+                SPANEL<br><span class="text-gray-600 text-3xl md:text-5xl">INJECTOR // V2</span>
+            </h1>
+
+            <p class="max-w-2xl text-gray-400 mb-12 font-mono text-xs md:text-sm border-l-2 border-white pl-6 text-left bg-gradient-to-r from-white/5 to-transparent p-4 italic">
+                "I lowered the <span class="text-white font-bold not-italic">level</span> to meet you. Admins watch, legit players complain and still, you never <span class="text-white font-bold not-italic">caught up with</span> us."
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl">
+                <button onmouseover="app.scrambleText(this, 'GET FILE')" onclick="app.triggerInstaller()" class="cyber-btn py-4 flex items-center justify-center gap-2 group hover:scale-[1.02] transition-transform">
+                    <i class="fas fa-bolt group-hover:animate-pulse"></i> GET FILE
+                </button>
+                <button onmouseover="app.scrambleText(this, 'DISCORD')" onclick="app.openDiscord()" class="cyber-btn bg-black text-white hover:bg-white hover:text-black py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
+                    <i class="fab fa-discord"></i> DISCORD
+                </button>
+                <button onmouseover="app.scrambleText(this, 'LUA OBFUSCATOR')" onclick="app.openLuaObfuscator()" class="cyber-btn bg-black border-gray-500 text-gray-400 hover:border-white hover:text-white py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
+                    <i class="fas fa-code"></i> LUA OBFUSCATOR
+                </button>
+            </div>
+            
+            <button onclick="app.openCreatorDiscord()" class="mt-8 w-full max-w-md border border-dotted border-gray-700 py-2 text-gray-600 hover:text-white hover:border-white hover:bg-white/5 transition font-mo o text-[10px] tracking-[0.3em] uppercase">
+                Start Chat with Creator
+            </button>
+        </main>
+
+        <!-- FEATURES -->
+        <section class="max-w-7xl mx-auto w-full px-6 grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 z-10">
+            <div onclick="app.openYTPlayer()" class="cyber-card p-6 cursor-pointer group bg-retro-panel">
+                <div class="flex justify-between items-start mb-4">
+                     <div class="text-3xl text-gray-300 group-hover:text-white transition-colors"><i class="fab fa-youtube"></i></div>
+                     <div class="text-[10px] font-mono text-gray-600">MOD_01</div>
+                </div>
+                <h3 class="text-lg font-cyber font-bold mb-2 text-white group-hover:translate-x-1 transition-transform">YOUTUBE DECK</h3>
+                <p class="text-gray-500 font-mono text-xs leading-relaxed">Secure video stream container.</p>
+            </div>
+
+            <div onclick="app.openKeyboardModal()" class="cyber-card p-6 cursor-pointer group bg-retro-panel">
+                <div class="flex justify-between items-start mb-4">
+                     <div class="text-3xl text-gray-300 group-hover:text-white transition-colors"><i class="fas fa-keyboard"></i></div>
+                     <div class="text-[10px] font-mono text-gray-600">MOD_02</div>
+                </div>
+                <h3 class="text-lg font-cyber font-bold mb-2 text-white group-hover:translate-x-1 transition-transform">GUI TERMINAL</h3>
+                <p class="text-gray-500 font-mono text-xs leading-relaxed">Virtual input device.</p>
+            </div>
+
+            <div onclick="app.triggerFileUpload()" class="cyber-card p-6 cursor-pointer group bg-retro-panel">
+                <div class="flex justify-between items-start mb-4">
+                     <div class="text-3xl text-gray-300 group-hover:text-white transition-colors"><i class="fas fa-file-shield"></i></div>
+                     <div class="text-[10px] font-mono text-gray-600">MOD_03</div>
+                </div>
+                <h3 class="text-lg font-cyber font-bold mb-2 text-white group-hover:translate-x-1 transition-transform">FILE SHIFTER</h3>
+                <p class="text-gray-500 font-mono text-xs leading-relaxed">Ghost Protocol Byte-Shift.</p>
+            </div>
+        </section>
+
+        <footer class="text-center py-6 text-[10px] text-gray-700 font-mono border-t border-gray-900 z-10 bg-black">
+            SPANEL © 2025 | MAZIKEEN HELPER: DISABILITYBG
+        </footer>
+
+        <!-- LEFT WIDGET: STATS -->
+        <div class="fixed bottom-4 left-4 z-50 bg-black border border-white p-2 font-mono text-[10px] hidden md:block shadow-[2px_2px_0px_#333] w-48">
+            <div class="flex items-center gap-2 border-b border-gray-800 pb-1 mb-1">
+                <span class="w-1.5 h-1.5 bg-white animate-pulse"></span>
+                <span>NET_LIVE: <span id="live-visits" class="font-bold text-white">42</span></span>
+            </div>
+            <div class="text-gray-500 mb-2">TOTAL: <span id="total-visits">14,205</span></div>
+            <div id="activity-log" class="h-16 overflow-hidden text-[9px] text-gray-600 border-t border-dashed border-gray-800 pt-1 leading-tight"></div>
+        </div>
+
+        <!-- RIGHT WIDGET: MUSIC PLAYER (NEW FEATURE) -->
+        <div class="fixed bottom-4 right-4 z-50 w-64 bg-black border border-white p-0 shadow-[4px_4px_0px_#333] font-mono text-xs hidden md:block">
+            <!-- Player Header -->
+            <div class="bg-white text-black px-2 py-1 flex justify-between items-center border-b border-black">
+                <span class="font-bold tracking-widest"><i class="fas fa-compact-disc spin-slow mr-1"></i> CYBER-DECK</span>
+                <span id="track-time">LOOP MODE</span>
+            </div>
+            <!-- Visualizer Area -->
+            <div class="h-12 border-b border-white bg-[#050505] relative flex items-end justify-center gap-1 p-1 overflow-hidden">
+                <div class="visualizer-bar" style="animation-duration: 0.4s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.2s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.6s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.3s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.5s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.2s"></div>
+                <div class="visualizer-bar" style="animation-duration: 0.4s"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            </div>
+            <!-- Controls -->
+            <div class="p-3">
+                <div class="mb-2 whitespace-nowrap overflow-hidden relative h-4">
+                    <div id="track-name" class="absolute whitespace-nowrap animate-[marquee_10s_linear_infinite]">NO DISC INSERTED</div>
+                </div>
+                <div class="flex justify-between items-center text-lg">
+                    <button onclick="app.music.replay()" class="hover:text-gray-400 active:scale-90 transition"><i class="fas fa-step-backward"></i></button>
+                    <button onclick="app.music.toggle()" class="hover:text-white text-white active:scale-90 transition w-8 h-8 border border-white flex items-center justify-center rounded-full">
+                        <i id="play-icon" class="fas fa-play text-xs ml-0.5"></i>
+                    </button>
+                    <button onclick="app.music.replay()" class="hover:text-gray-400 active:scale-90 transition"><i class="fas fa-step-forward"></i></button>
+                </div>
+                <div class="mt-2 flex gap-1 items-center">
+                     <i class="fas fa-volume-down text-[8px] text-gray-500"></i>
+                     <input type="range" min="0" max="1" step="0.1" value="0.3" oninput="app.music.volume(this.value)" class="w-full h-1 bg-gray-800 appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal-container" class="modal-backdrop hidden" onclick="app.closeModal()">
+        <div class="cyber-card w-full max-w-2xl bg-black border border-white p-0 relative flex flex-col max-h-[90vh] shadow-[0_0_50px_rgba(255,255,255,0.1)]" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="bg-white text-black p-3 flex justify-between items-center border-b border-gray-800">
+                <div class="font-cyber font-bold tracking-widest flex items-center gap-2 text-sm">
+                    <i id="modal-icon" class="fas"></i>
+                    <span id="modal-title">TITLE</span>
+                </div>
+                <button onclick="app.closeModal()" class="hover:bg-black hover:text-white px-2 font-bold transition-colors">X</button>
+            </div>
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto flex-grow font-mono text-sm space-y-6 bg-black">
+                <div class="border-b border-dashed border-gray-800 pb-4 text-xs text-gray-500 flex justify-between">
+                    <span id="modal-id">ID: 0x00</span>
+                    <span id="modal-desc">Description</span>
+                </div>
+                <div id="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTALLER OVERLAY -->
+    <div id="installer-overlay" class="fixed inset-0 z-[200] bg-black flex flex-col font-mono text-white hidden">
+        <div class="h-12 border-b border-gray-800 flex items-center justify-between px-6 bg-black">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-terminal text-white text-xs"></i>
+                <span class="tracking-widest font-bold text-xs text-gray-400">ROOT_ACCESS // INSTALLER</span>
+            </div>
+            <div class="flex gap-4 text-[10px]">
+                <button onclick="app.closeInstaller()" class="hover:text-white text-gray-500 hover:bg-white/10 px-3 py-1 transition">[ ABORT ]</button>
+            </div>
+        </div>
+        <div class="flex-grow flex items-center justify-center p-4">
+            <div class="w-full max-w-4xl border border-white bg-black p-1 grid grid-cols-1 md:grid-cols-2 gap-0 shadow-[0_0_100px_rgba(255,255,255,0.05)]">
+                <div class="p-8 border-r border-gray-800 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute inset-0 bg-white/5 pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="inline-block border border-white text-white px-2 py-0.5 text-[10px] mb-6 font-bold">SECURE_BOOT</div>
+                        <h1 class="text-4xl font-black mb-2 tracking-tighter text-white">SPANEL</h1>
+                        <h2 class="text-sm text-gray-500 mb-8 tracking-widest">INSTALLATION WIZARD</h2>
+                        <div class="space-y-4 text-xs text-gray-400 font-mono">
+                             <div class="flex items-center gap-3"><div class="w-2 h-2 bg-white"></div> <span>Initializing Aegis...</span></div>
+                             <div class="flex items-center gap-3"><div class="w-2 h-2 bg-white"></div> <span>Loading Ghost Protocol...</span></div>
+                             <div class="flex items-center gap-3"><div class="w-2 h-2 bg-gray-600"></div> <span>Verifying Hash...</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 flex flex-col bg-[#050505]">
+                    <div class="bg-black border border-gray-800 p-2 mb-4 text-[10px] text-gray-600 flex justify-between font-mono">
+                        <span>root@spanel:~# ./deploy_payload.sh</span>
+                        <span>BASH</span>
+                    </div>
+                    <div id="terminal-logs" class="flex-grow font-mono text-[11px] space-y-1 text-gray-400 overflow-hidden mb-6 h-48 border-l border-gray-800 pl-4"></div>
+                    <button id="dlBtn" onclick="app.executeDownload()" class="w-full bg-white text-black font-bold py-4 hover:bg-gray-200 transition text-xs tracking-[0.2em] relative overflow-hidden border border-white">
+                        <span class="relative z-10"><i class="fas fa-download mr-2"></i> INITIATE DEPLOYMENT</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN INPUT -->
+    <input type="file" id="fileInput" hidden accept=".lua,.txt">
+
+    <style>
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+
+    <script>
+        const app = {
+            state: {
+                vhs: true,
+                muted: false,
+                keyboardBuffer: ''
+            },
+            
+            // --- CONSTANTS ---
+            DOWNLOAD_URL: "https://astriidybg.github.io/Spanel2/",
+            DISCORD_URL: "https://discord.gg/MpcyR24e",
+            CREATOR_DISCORD_ID: "123456789012345678",
+
+            // --- MUSIC PLAYER ---
+            music: {
+                tracks: [
+                    { name: "EYEDRESS - JEALOUS (SLOWED REVERB)", url: "https://cs1.mp3.pm/download/189207047/SUREeEUzWFd2YzlzNEQrOFhoTzc1MnFCRmpxbFF0SnRNd2pGcTd4RjJKNm1YTGtsbGkzRUQ3TC91VlpDeTJ2NXJuczZEenVRdU5NUEFtejNTM0UwOStoS1FyeTRUOW5JQ0pOK1FnazJOeFA4S1M3VWJHTmp5YVEvbERpeVBhYTE/eyedress_-_jealous_slowed_reverb_(mp3.pm).mp3" }
+                ],
+                currentIdx: 0,
+                isPlaying: false,
+                audioEl: null,
+                
+                init: function() {
+                    this.audioEl = document.getElementById('audio-player');
+                    this.audioEl.volume = 0.3;
+                    this.audioEl.loop = true; // Loop enabled by default for single track
+                    this.updateUI();
+                },
+                toggle: function() {
+                    if(this.isPlaying) this.audioEl.pause();
+                    else {
+                        if(!this.audioEl.src) this.loadTrack(0);
+                        this.audioEl.play().catch(e=>console.log(e));
+                    }
+                    this.isPlaying = !this.isPlaying;
+                    this.updateUI();
+                },
+                replay: function() {
+                    this.audioEl.currentTime = 0;
+                    if(!this.isPlaying) {
+                        this.audioEl.play();
+                        this.isPlaying = true;
+                    }
+                    this.updateUI();
+                },
+                loadTrack: function(idx) {
+                    this.currentIdx = idx;
+                    this.audioEl.src = this.tracks[idx].url;
+                    this.isPlaying = true;
+                    this.audioEl.play();
+                    this.updateUI();
+                },
+                volume: function(val) {
+                    this.audioEl.volume = val;
+                },
+                updateUI: function() {
+                    const icon = document.getElementById('play-icon');
+                    icon.className = this.isPlaying ? "fas fa-pause text-xs" : "fas fa-play text-xs ml-0.5";
+                    document.getElementById('track-name').innerText = (this.isPlaying ? "PLAYING: " : "PAUSED: ") + this.tracks[this.currentIdx].name;
+                }
+            },
+
+            // --- INIT ---
+            init: function() {
+                this.initVisits();
+                this.initCanvas();
+                this.setupAudio();
+                this.initActivityLog();
+                this.music.init();
+                
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileSelect(e));
+            },
+
+            // --- SCRAMBLE TEXT EFFECT ---
+            scrambleText: function(el, originalText) {
+                if(el.dataset.scrambling === "true") return;
+                el.dataset.scrambling = "true";
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+                let iterations = 0;
+                
+                const interval = setInterval(() => {
+                    el.innerText = originalText.split("").map((letter, index) => {
+                        if(index < iterations) {
+                             if(el.querySelectorAll('i').length > 0) return letter; 
+                             return originalText[index]; 
+                        }
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    
+                    if(iterations >= originalText.length) { 
+                        clearInterval(interval);
+                        el.innerText = originalText;
+                        el.dataset.scrambling = "false";
+                        if(originalText.includes('GET FILE')) el.innerHTML = '<i class="fas fa-bolt group-hover:animate-pulse"></i> GET FILE';
+                        if(originalText.includes('DISCORD')) el.innerHTML = '<i class="fab fa-discord"></i> DISCORD';
+                        if(originalText.includes('LUA')) el.innerHTML = '<i class="fas fa-code"></i> LUA OBFUSCATOR';
+                    }
+                    iterations += 1/2; 
+                }, 30);
+            },
+
+            // --- ACTIVITY LOG ---
+            initActivityLog: function() {
+                const logs = ["Proxy node rerouted [82.11]", "Firewall ping detected", "Auth token refreshed", "Packet loss: 0.01%", "Sentinel: Idle", "User_442 connected", "Cache flushed"];
+                const el = document.getElementById('activity-log');
+                
+                setInterval(() => {
+                    const log = logs[Math.floor(Math.random() * logs.length)];
+                    const div = document.createElement('div');
+                    div.innerText = "> " + log;
+                    el.prepend(div);
+                    if(el.children.length > 4) el.lastElementChild.remove();
+                }, 2000);
+            },
+
+            // --- AUDIO SYSTEM SOUNDS ---
+            audioCtx: null,
+            setupAudio: function() {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioCtx = new AudioContext();
+                } catch(e) {}
+            },
+            playUiSound: function(freq = 800, type = 'sine') {
+                if(!this.audioCtx) this.setupAudio();
+                if(!this.audioCtx) return;
+                if(this.audioCtx.state === 'suspended') this.audioCtx.resume();
+
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq/2, this.audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.1);
+            },
+
+            // --- THEME ---
+            toggleVhs: function() {
+                this.state.vhs = !this.state.vhs;
+                document.getElementById('vhs-effects').classList.toggle('hidden', !this.state.vhs);
+                document.getElementById('vhs-status').innerText = this.state.vhs ? 'ON' : 'OFF';
+                this.playUiSound();
+            },
+
+            // --- NAVIGATION / LOADING (IMPROVED) ---
+            enterSystem: async function() {
+                this.playUiSound();
+                
+                const audioEl = document.getElementById('background-music');
+                audioEl.src = 'https://s3.ustatik.com/audio.com.audio/transcoding/12/67/1840946218336712-1840946218414998-1840946263929508.mp3?response-content-disposition=attachment%3B%20filename%3D%22The%20Weeknd%20-%20Timeless%20%28feat.%20Playboi%20Carti%29.mp3%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=W7IA3NSYSOQIKLY9DEVC%2F20260115%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260115T065833Z&X-Amz-SignedHeaders=host&X-Amz-Expires=518400&X-Amz-Signature=0331c28b826d61d6b14b1486c3bd7cc112541f30604a79b6c2844070ea418548';
+                audioEl.play().catch(e => console.error("Audio playback failed:", e));
+
+                document.getElementById('welcome-screen').classList.add('opacity-0', 'pointer-events-none');
+                
+                await this.startCardTransition(4000);
+                
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('intro-modal').classList.remove('hidden');
+            },
+            
+            closeIntro: function() {
+                this.playUiSound();
+                document.getElementById('intro-modal').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('main-content').classList.add('animate-crt-open');
+                // The main music widget is not started automatically anymore to prevent sound overlap.
+                // this.music.toggle();
+            },
+
+            startCardTransition: function(duration = 4000) {
+                return new Promise(resolve => {
+                    const overlay = document.getElementById('card-transition-overlay');
+                    overlay.innerHTML = ''; // Clear previous
+                    overlay.classList.remove('hidden');
+
+                    const scene = document.createElement('div');
+                    scene.className = 'card-scene';
+                    overlay.appendChild(scene);
+
+                    const cardCount = 80;
+                    for (let i = 0; i < cardCount; i++) {
+                        const card = document.createElement('div');
+                        card.className = 'transition-card';
+                        
+                        const x = (Math.random() - 0.5) * 200;
+                        const y = (Math.random() - 0.5) * 200;
+                        const z = (Math.random() - 0.5) * 1000;
+                        const rotX = (Math.random() - 0.5) * 360;
+                        const rotY = (Math.random() - 0.5) * 360;
+                        const rotZ = (Math.random() - 0.5) * 360;
+
+                        card.style.setProperty('--final-transform', `translate3d(${x}vw, ${y}vh, ${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`);
+                        card.style.animationDelay = `${Math.random() * 0.5}s`;
+                        
+                        scene.appendChild(card);
+                    }
+
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        overlay.innerHTML = ''; // Cleanup
+                        resolve();
+                    }, duration);
+                });
+            },
+
+            startLoading: function(type, msg, duration = 1500) {
+                return new Promise(resolve => {
+                    const overlay = document.getElementById('loader-overlay');
+                    const content = document.getElementById('loader-content');
+                    overlay.classList.remove('hidden');
+                    content.innerHTML = ''; // Clear previous
+
+                    // DYNAMIC LOADERS LOGIC
+                    let interval;
+                    
+                    if(type === 'void') {
+                        // 3D TUNNEL
+                        content.innerHTML = `
+                            <div class="void-gate">
+                                <div class="void-tunnel"></div>
+                                <div class="z-10 bg-black border-y-2 border-white p-4 text-2xl font-cyber tracking-[0.5em] animate-pulse">${msg}</div>
+                            </div>`;
+                    } else if (type === 'neural') {
+                        // CANVAS NETWORK
+                        const canvas = document.createElement('canvas');
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        content.appendChild(canvas);
+                        const ctx = canvas.getContext('2d');
+                        const nodes = Array.from({length: 50}, () => ({x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4}));
+                        
+                        const drawNeural = () => {
+                            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                            ctx.fillRect(0,0,canvas.width, canvas.height);
+                            ctx.strokeStyle = 'white';
+                            ctx.lineWidth = 1;
+                            
+                            nodes.forEach(n => {
+                                n.x += n.vx; n.y += n.vy;
+                                if(n.x < 0 || n.x > canvas.width) n.vx *= -1;
+                                if(n.y < 0 || n.y > canvas.height) n.vy *= -1;
+                                
+                                nodes.forEach(n2 => {
+                                    const d = Math.hypot(n.x-n2.x, n.y-n2.y);
+                                    if(d < 100) {
+                                        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+                                    }
+                                });
+                            });
+                            
+                            ctx.font = "20px Share Tech Mono";
+                            ctx.fillStyle = "white";
+                            ctx.fillText(msg, canvas.width/2 - 100, canvas.height/2);
+                        };
+                        interval = setInterval(drawNeural, 30);
+                        
+                    } else if (type === 'rain') {
+                        // MATRIX RAIN (MONOCHROME)
+                        const canvas = document.createElement('canvas');
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        content.appendChild(canvas);
+                        const ctx = canvas.getContext('2d');
+                        const columns = Math.floor(canvas.width / 20);
+                        const drops = Array(columns).fill(1);
+                        
+                        const drawRain = () => {
+                            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                            ctx.fillRect(0,0,canvas.width, canvas.height);
+                            ctx.fillStyle = '#fff';
+                            ctx.font = '15px monospace';
+                            
+                            for(let i=0; i<drops.length; i++) {
+                                const text = String.fromCharCode(Math.floor(Math.random() * 96) + 33); // Random ASCII
+                                ctx.fillText(text, i*20, drops[i]*20);
+                                if(drops[i]*20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                                drops[i]++;
+                            }
+                            // Overlay Text
+                            ctx.fillStyle = "black";
+                            ctx.fillRect(canvas.width/2 - 150, canvas.height/2 - 30, 300, 60);
+                            ctx.strokeStyle = "white";
+                            ctx.strokeRect(canvas.width/2 - 150, canvas.height/2 - 30, 300, 60);
+                            ctx.fillStyle = "white";
+                            ctx.font = "bold 20px Orbitron";
+                            ctx.fillText(msg, canvas.width/2 - 120, canvas.height/2 + 10);
+                        };
+                        interval = setInterval(drawRain, 50);
+
+                    } else {
+                        // Fallback Glitch
+                         content.innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full relative">
+                                <h1 class="text-6xl text-white font-black font-cyber animate-pulse">${msg}</h1>
+                                <div class="mt-4 text-center font-mono text-white font-bold tracking-widest text-sm animate-pulse border border-white px-2">ACCESS GRANTED</div>
+                            </div>`;
+                    }
+
+                    this.playUiSound();
+
+                    setTimeout(() => {
+                        if(interval) clearInterval(interval);
+                        overlay.classList.add('hidden');
+                        content.innerHTML = '';
+                        resolve();
+                    }, duration);
+                });
+            },
+
+            // --- MODALS & TOOLS ---
+            closeModal: function() {
+                this.playUiSound();
+                document.getElementById('modal-container').classList.add('hidden');
+            },
+
+            openNavModal: async function(key) {
+                await this.startLoading('rain', 'DECRYPTING DATA...', 1200);
+                const data = {
+                    modules: { title: "CORE MODULES", id: "0xMOD-LIST", desc: "Active kernel modules", icon: "fa-cubes", content: [{name: "CORE_KERNEL", tag: "RUNNING"}, {name: "LUA_BRIDGE", tag: "ACTIVE"}] },
+                    docs: { title: "MANUALS", id: "0xDOC-V2", desc: "Technical reference", icon: "fa-book", content: [{name: "API Reference v2.5", tag: "PDF"}] },
+                    security: { title: "THREAT SCAN", id: "0xSEC-CHK", desc: "Security analysis", icon: "fa-lock", content: [{name: "VAC Status", tag: "UNDETECTED"}] }
+                };
+                
+                if(data[key]) {
+                    let html = '';
+                    data[key].content.forEach(item => {
+                        html += `
+                        <div class="flex justify-between items-center border-b border-gray-900 py-3 hover:bg-white/5 px-2 transition">
+                           <span class="text-gray-300">${item.name}</span>
+                           <span class="bg-white text-black font-bold text-[10px] px-2 py-0.5">${item.tag}</span>
+                       </div>`;
+                    });
+                    this.showModal(data[key].title, data[key].id, data[key].desc, data[key].icon, html);
+                }
+            },
+
+            openKeyboardModal: async function() {
+                await this.startLoading('neural', 'INITIALIZING DRIVER...', 1500);
+                this.state.keyboardBuffer = '';
+                
+                const rows = ["1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+                let keysHtml = '<div class="flex flex-col gap-2 select-none">';
+                rows.forEach(row => {
+                    keysHtml += '<div class="flex justify-center gap-1">';
+                    row.split('').forEach(char => {
+                        keysHtml += `<button onmousedown="app.typeKey('${char}')" class="bg-black border border-gray-600 text-gray-300 hover:border-white hover:text-white w-8 h-10 md:w-10 md:h-12 font-bold active:translate-y-0.5 transition-all">${char}</button>`;
+                    });
+                    keysHtml += '</div>';
+                });
+                keysHtml += '<div class="flex justify-center mt-2"><button onmousedown="app.typeKey(\' \')" class="bg-black border border-gray-600 text-gray-300 hover:border-white hover:text-white w-64 h-8 font-bold text-xs uppercase tracking-widest active:translate-y-0.5 transition-all">Spacebar</button></div></div>';
+                
+                const html = `
+                    <div id="kbd-display" class="bg-gray-900 border border-gray-700 p-4 min-h-[60px] mb-4 text-white whitespace-pre-wrap break-all shadow-inner font-bold text-lg tracking-wider">_</div>
+                    ${keysHtml}
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <button onclick="app.copyKeyboard()" class="cyber-btn py-3 text-xs">COPY SEQUENCE</button>
+                        <button onclick="app.clearKeyboard()" class="cyber-btn py-3 text-xs border-white text-white">CLEAR BUFFER</button>
+                    </div>
+                `;
+                
+                this.showModal('GUI KEYBOARD', '0xGUI-KBD', 'Virtual input device', 'fa-keyboard', html);
+            },
+
+            typeKey: function(char) {
+                this.playUiSound(1000, 'square');
+                this.state.keyboardBuffer += char;
+                document.getElementById('kbd-display').innerText = this.state.keyboardBuffer;
+            },
+            clearKeyboard: function() { this.state.keyboardBuffer = ''; document.getElementById('kbd-display').innerText = '_'; this.playUiSound(); },
+            copyKeyboard: function() { navigator.clipboard.writeText(this.state.keyboardBuffer); this.playUiSound(); },
+
+            openLuaObfuscator: async function() {
+                await this.startLoading('rain', 'LOADING ENCRYPTION...', 1500);
+                const html = `
+                    <div class="relative">
+                        <textarea id="lua-input" placeholder="-- Paste Lua Code Here" class="w-full h-32 bg-gray-900/50 border border-gray-700 text-gray-300 p-3 text-xs outline-none focus:border-white transition-colors font-mono"></textarea>
+                        <div class="absolute top-0 right-0 p-1 text-[10px] text-gray-600">LUA 5.1</div>
+                    </div>
+                    <button onclick="app.doObfuscate()" class="w-full cyber-btn py-3 my-4">INITIATE OBFUSCATION</button>
+                    <div class="relative">
+                        <textarea id="lua-output" readonly placeholder="-- Output will appear here" class="w-full h-32 bg-black border border-gray-800 text-gray-400 p-3 text-xs outline-none resize-none font-mono"></textarea>
+                         <div class="absolute top-0 right-0 p-1 text-[10px] text-gray-600">READ ONLY</div>
+                    </div>
+                `;
+                this.showModal('LUA OBFUSCATOR', '0xLUA-ENC', 'Browser-side processing', 'fa-code', html);
+            },
+
+            doObfuscate: function() {
+                const input = document.getElementById('lua-input').value;
+                if(!input) return;
+                let decimalStr = "";
+                for (let i = 0; i < input.length; i++) decimalStr += "\\" + input.charCodeAt(i);
+                document.getElementById('lua-output').value = `loadstring("${decimalStr}")()`;
+                this.playUiSound(1200, 'square');
+            },
+
+            triggerFileUpload: function() { document.getElementById('fileInput').click(); },
+            handleFileSelect: async function(e) {
+                const file = e.target.files[0];
+                if(!file) return;
+                await this.startLoading('neural', 'ANALYZING STRUCTURE...', 2000);
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const content = ev.target.result;
+                    let decimalStr = "";
+                    for (let i = 0; i < content.length; i++) decimalStr += "\\" + content.charCodeAt(i);
+                    const result = `loadstring("${decimalStr}")()`;
+                    
+                    const html = `
+                        <textarea readonly class="w-full h-48 bg-black border border-gray-800 text-gray-400 p-3 text-xs outline-none resize-none font-mono">${result}</textarea>
+                        <button onclick="navigator.clipboard.writeText(document.querySelector('textarea').value)" class="w-full cyber-btn py-3 mt-6">COPY BYTECODE</button>
+                    `;
+                    this.showModal('FILE SHIFTER', '0xFILE-ENC', 'Ghost Protocol applied', 'fa-file-code', html);
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            },
+
+            openYTPlayer: async function() {
+                await this.startLoading('void', 'INSERTING TAPE...', 2000);
+                const html = `
+                    <div class="space-y-4">
+                        <div class="flex gap-2">
+                            <input id="yt-input" type="text" placeholder="Paste YouTube URL..." class="flex-grow bg-black border border-gray-700 py-2 px-3 text-white text-xs outline-none focus:border-white transition">
+                            <button onclick="app.loadYT()" class="cyber-btn px-4 text-xs">LOAD</button>
+                        </div>
+                        <div id="yt-frame" class="aspect-video w-full border border-gray-800 bg-black flex items-center justify-center text-gray-700 text-xs">[ NO SIGNAL ]</div>
+                    </div>
+                `;
+                this.showModal('YOUTUBE DECK', '0xYT-STREAM', 'Secure media container', 'fa-youtube', html);
+            },
+            
+            loadYT: function() {
+                const link = document.getElementById('yt-input').value;
+                const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                const match = link.match(regExp);
+                if (match && match[7].length === 11) {
+                    const videoId = match[7];
+                    document.getElementById('yt-frame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" class="w-full h-full" frameborder="0" allowfullscreen></iframe>`;
+                    this.playUiSound();
+                } else {
+                    alert('Invalid URL');
+                }
+            },
+
+            showModal: function(title, id, desc, icon, contentHtml) {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-id').innerText = "ID: " + id;
+                document.getElementById('modal-desc').innerText = desc;
+                document.getElementById('modal-icon').className = "fas " + icon;
+                document.getElementById('modal-body').innerHTML = contentHtml;
+                document.getElementById('modal-container').classList.remove('hidden');
+                this.playUiSound();
+            },
+
+            // --- LINKS ---
+            openDiscord: async function() { await this.startLoading('void', 'UPLINK ESTABLISHED', 1500); window.open(this.DISCORD_URL); },
+            openCreatorDiscord: async function() { await this.startLoading('void', 'LOCATING ID...', 1500); window.open(`https://discord.com/users/${this.CREATOR_DISCORD_ID}`); },
+
+            // --- INSTALLER ---
+            triggerInstaller: async function() {
+                this.playUiSound();
+                await this.startLoading('neural', 'ROOT ACCESS...', 2000);
+                document.getElementById('main-content').classList.add('hidden');
+                document.getElementById('installer-overlay').classList.remove('hidden');
+                this.runTerminal();
+            },
+            closeInstaller: function() {
+                this.playUiSound();
+                document.getElementById('installer-overlay').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+            },
+            runTerminal: function() {
+                const container = document.getElementById('terminal-logs');
+                container.innerHTML = '';
+                const logs = [
+                    { text: "[BOOT] INITIALIZING VERIFICATION...", type: 'text-white' },
+                    { text: "[AUTH] CHECKING ADMIN PRIVILEGES...", type: 'text-gray-400' },
+                    { text: "[SEC] Aegis Sentinel Monitoring.", type: 'text-white' },
+                    { text: "[SCAN] User profile under analysis...", type: 'text-white' },
+                    { text: "[SYS] Permission matrix loaded.", type: 'font-bold text-white' },
+                    { text: "[NET] Identity validation in progress...", type: 'text-white' },
+                    { text: "[STATUS] No interference detected.", type: 'font-bold text-white' },
+                    { text: "[READY] Awaiting payload deployment...", type: 'font-bold text-white' }
+                ];
+                let i = 0;
+                const addLog = () => {
+                    if(i < logs.length) {
+                        const time = new Date().toLocaleTimeString('en-US', {hour12: false});
+                        const div = document.createElement('div');
+                        div.className = 'break-words';
+                        div.innerHTML = `<span class="text-gray-600">[${time}]</span> <span class="${logs[i].type}">${logs[i].text}</span>`;
+                        container.appendChild(div);
+                        this.playUiSound(1000, 'square');
+                        i++;
+                        setTimeout(addLog, 400);
+                    }
+                };
+                addLog();
+            },
+            executeDownload: function() {
+                this.playUiSound();
+                const btn = document.getElementById('dlBtn');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> REDIRECTING...';
+                setTimeout(() => {
+                    window.open(this.DOWNLOAD_URL, '_blank');
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-download mr-2"></i> INITIATE DEPLOYMENT', 2000);
+                }, 1500);
+            },
+
+            // --- STATS / CANVAS ---
+            initVisits: function() {
+                let count = localStorage.getItem('spanel_visits') || 14205;
+                count++;
+                localStorage.setItem('spanel_visits', count);
+                document.getElementById('total-visits').innerText = parseInt(count).toLocaleString();
+                setInterval(() => {
+                    let val = parseInt(document.getElementById('live-visits').innerText);
+                    val += Math.floor(Math.random() * 3) - 1;
+                    if(val < 10) val = 10;
+                    document.getElementById('live-visits').innerText = val;
+                }, 5000);
+            },
+            initCanvas: function() {
+                const canvas = document.getElementById('bgCanvas');
+                const ctx = canvas.getContext('2d');
+                let w = canvas.width = window.innerWidth;
+                let h = canvas.height = window.innerHeight;
+                window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+                
+                const parts = [];
+                for(let i=0; i<80; i++) parts.push({x:Math.random()*w, y:Math.random()*h, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5, s:Math.random()*1.5+.5, a:Math.random()*.3+.05});
+                
+                const anim = () => {
+                    ctx.clearRect(0,0,w,h);
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    parts.forEach(p => {
+                        p.x+=p.vx; p.y+=p.vy;
+                        if(p.x<0||p.x>w) p.x=Math.random()*w;
+                        if(p.y<0||p.y>h) p.y=Math.random()*h;
+                        ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2); ctx.fill();
+                    });
+                    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for(let i=0; i<parts.length; i++) {
+                        for(let j=i+1; j<parts.length; j++) {
+                            const d = Math.hypot(parts[i].x-parts[j].x, parts[i].y-parts[j].y);
+                            if(d<80) { ctx.moveTo(parts[i].x, parts[i].y); ctx.lineTo(parts[j].x, parts[j].y); }
+                        }
+                    }
+                    ctx.stroke();
+                    requestAnimationFrame(anim);
+                };
+                anim();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
